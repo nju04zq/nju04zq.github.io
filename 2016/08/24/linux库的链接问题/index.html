@@ -1,0 +1,211 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>linux库的链接问题 | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="最近调试OpenSSL的证书验证功能，遇到了一个诡异的linux库的链接问题。">
+  
+  <meta name="description" content="最近调试OpenSSL的证书验证功能，遇到了一个诡异的linux库的链接问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux库的链接问题">
+<meta property="og:url" content="http://yoursite.com/2016/08/24/linux库的链接问题/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="最近调试OpenSSL的证书验证功能，遇到了一个诡异的linux库的链接问题。">
+<meta property="og:updated_time" content="2017-03-03T14:06:48.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linux库的链接问题">
+<meta name="twitter:description" content="最近调试OpenSSL的证书验证功能，遇到了一个诡异的linux库的链接问题。">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2016/08/24/linux库的链接问题/">
+  <time datetime="2016-08-24T11:58:33.000Z">
+    2016-08-24
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">linux库的链接问题</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>最近调试OpenSSL的证书验证功能，遇到了一个诡异的linux库的链接问题。</p>
+<a id="more"></a>
+<p>大背景如下，产品库 <em>libtp.so</em> 需要对下载的CA根证书做校验。在调用OpenSSL的某个校验函数时居然失败了。通过GDB跟踪OpenSSL源码，在调用函数 <em>EVP_get_digestbyname</em> 获取 <em>SHA256</em> 哈希算法的时候出现了问题。该函数理应返回 <em>SHA256</em> 算法的描述结构，但是调用后却返回了空指针。拿不到算法的描述信息，校验自然会失败。</p>
+<p>首先怀疑的是，OpenSSL没有正确初始化。在使用OpenSSL库之前需要调用 <em>OPENSSL_add_all_algorithms_noconf</em> 做初始化。 检查代码，然后GDB跟踪，初始化一切正常。</p>
+<p>于是，对函数 <em>EVP_get_digestbyname</em> 下断点。该函数仅调用 <em>OBJ_NAME_get</em> 获取数据。此外，算法描述信息被存放在一个哈希表中，变量 <em>names_lh</em> 指向这个哈希表。 函数 <em>OBJ_NAME_get</em> 就是从这个哈希表里面拿数据。根据变量 <em>names_lh</em> 的值也能证明OpenSSL库已经初始化完毕。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">Breakpoint <span class="number">9</span>, EVP_get_digestbyname (name=<span class="number">0x2aaaab80f2c7</span> <span class="string">"SHA256"</span>) at names.c:<span class="number">118</span></div><div class="line"><span class="number">118</span>             cp=(<span class="keyword">const</span> EVP_MD *)OBJ_NAME_get(name,OBJ_NAME_TYPE_MD_METH);</div><div class="line">(gdb) p names_lh</div><div class="line">$<span class="number">30</span> = (<span class="keyword">struct</span> lhash_st_OBJ_NAME *) <span class="number">0x63ed10</span></div><div class="line">(gdb) p &amp;names_lh</div><div class="line">$<span class="number">31</span> = (<span class="keyword">struct</span> lhash_st_OBJ_NAME **) <span class="number">0x2aaaaaf643e0</span></div></pre></td></tr></table></figure>
+<p>接着step进入函数 <em>OBJ_NAME_get</em>，再次打印变量 <em>names_lh</em>。期间没有其他赋值操作发生（也可以肯定其他线程不会调用OpenSSL库），变量 <em>names_lh</em> 的值居然变成了空，而且变量的地址也发生了变化。 要知道，这可是一个全局静态变量，一旦进程运行，它的地址不可能改变！而且变量 <em>names_lh</em> 值为空说明OpenSSL库没有被初始化。。。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">(gdb) s</div><div class="line">OBJ_NAME_get (name=0x2aaaab80f2c7 "SHA256", type=1) at o_names.c:158</div><div class="line">158             int num=0,alias;</div><div class="line">(gdb) p &amp;names_lh</div><div class="line">$32 = (struct lhash_st_OBJ_NAME **) 0x2aaaaba88680</div><div class="line">(gdb) p names_lh</div><div class="line">$33 = (struct lhash_st_OBJ_NAME *) 0x0</div></pre></td></tr></table></figure>
+<p>只有一个解释，我们的进程内部有两份相同的OpenSSL源代码。初始化和获取数据发生在不同的源代码中。我们可以对比初始化和获取数据时的调用栈来证实这一点。</p>
+<p>这个是初始化过程的调用栈。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">#0  EVP_add_digest (md=0x2aaaaaf44fa0) at names.c:85</div><div class="line">#1  0x00002aaaaabf088e in OpenSSL_add_all_digests () at c_alld.c:71</div><div class="line">#2  0x00002aaaaabf0103 in OPENSSL_add_all_algorithms_noconf () at c_all.c:84</div></pre></td></tr></table></figure>
+<p>这个是校验时候的调用栈。（略去了调用参数）</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">#0  OBJ_NAME_get ("SHA256") at o_names.c:158</div><div class="line">#1  0x00002aaaab78e2d5 in EVP_get_digestbyname ("SHA256") at names.c:118</div><div class="line">#2  0x00002aaaab7fc118 in CMS_SignerInfo_verify () at cms_sd.c:783</div><div class="line">#3  0x00002aaaab7f9e4e in CMS_verify () at cms_smime.c:382</div></pre></td></tr></table></figure>
+<p>然后利用 <em>ps aux</em> + <em>grep</em> 找到进程的pid，比如8499。打开/proc/8499/smaps，可以看到进程的虚拟地址空间详细信息。其中，我们只关心上面两个调用栈在其中的位置。两串地址分别分布在如下两个虚拟地址段中。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"><span class="number">2</span>aaaaaab0000<span class="number">-2</span>aaaaad32000 r-xp <span class="number">00000000</span> <span class="number">00</span>:<span class="number">1</span>e <span class="number">91778381</span></div><div class="line">/xxx/libgch.so</div><div class="line">Size:              <span class="number">2568</span> kB</div><div class="line">Rss:               <span class="number">1344</span> kB</div><div class="line">Shared_Clean:         <span class="number">0</span> kB</div><div class="line">Shared_Dirty:         <span class="number">0</span> kB</div><div class="line">Private_Clean:     <span class="number">1336</span> kB</div><div class="line">Private_Dirty:        <span class="number">8</span> kB</div><div class="line">Swap:                 <span class="number">0</span> kB</div><div class="line">Pss:               <span class="number">1344</span> kB</div><div class="line"></div><div class="line"><span class="number">2</span>aaaab678000<span class="number">-2</span>aaaab863000 r-xp <span class="number">00000000</span> <span class="number">00</span>:<span class="number">1</span>e <span class="number">96464261</span></div><div class="line">/xxx/libcrypto.so</div><div class="line">Size:              <span class="number">1964</span> kB</div><div class="line">Rss:                <span class="number">444</span> kB</div><div class="line">Shared_Clean:         <span class="number">0</span> kB</div><div class="line">Shared_Dirty:         <span class="number">0</span> kB</div><div class="line">Private_Clean:      <span class="number">432</span> kB</div><div class="line">Private_Dirty:       <span class="number">12</span> kB</div><div class="line">Swap:                 <span class="number">0</span> kB</div><div class="line">Pss:                <span class="number">444</span> kB</div></pre></td></tr></table></figure>
+<p>第一个 <em>libgch.so</em> 是产品的核心库文件，第二个 <em>libcrypto.so</em> 是OpenSSL的库文件。问题来了，产品的库文件里面怎么会有OpenSSL的源代码？</p>
+<p>检查编译配置，OpenSSL通过静态库方式链接到了 <em>libgch.so</em> 。因此生成的 <em>libgch.so</em> 包含了OpenSSL的源代码。静态库链接时，如果静态库里面某个 <em>.o</em> 文件完全没有用到，那么这个 <em>.o</em> 中的函数是不会被放入目标文件中。</p>
+<p>本案中， <em>libgch.so</em> 有调用 <em>OPENSSL_add_all_algorithms_noconf</em> 初始化OpenSSL（发送HTTPS需要用到）。但是校验函数 <em>CMS_verify</em> 却没有用到。因此静态链接时前者被链入 <em>libgch.so</em> ，后者则不在其中。其后将 <em>libgch.so</em> 和 <em>libtp.so</em> 一起链接到主程序的时候，对于 <em>libtp.so</em> 中引用的 <em>OPENSSL_add_all_algorithms_noconf</em> 优先在 <em>libgch.so</em> 中找到（链接时<em>libgch.so</em>排在OpenSSL库的前面）。而校验函数 <em>CMS_verify</em> 则只能链接到OpenSSL的库 <em>libcrypto.so</em> 中。因此就出现了这么个奇怪的问题。</p>
+<p>解决方案 &amp; 总结：很简单，都用动态库。自己挖的坑自己填。</p>
+
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/link/">link</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 10px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/10/linux内核汇编小结/">linux内核x86汇编小结</a>
+      </li>
+    
+      <li>
+        <a href="/2015/08/26/如何调试系统库-libcurl/">如何调试系统库(libcurl)</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>

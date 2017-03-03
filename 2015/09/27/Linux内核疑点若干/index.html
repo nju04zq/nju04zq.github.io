@@ -1,0 +1,205 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>Linux内核疑点若干 | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="本文涉及的内核代码版本为2.4.0。（其余文章如不作特殊说明，也使用该版本代码。）">
+  
+  <meta name="description" content="本文涉及的内核代码版本为2.4.0。（其余文章如不作特殊说明，也使用该版本代码。）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux内核疑点若干">
+<meta property="og:url" content="http://yoursite.com/2015/09/27/Linux内核疑点若干/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="本文涉及的内核代码版本为2.4.0。（其余文章如不作特殊说明，也使用该版本代码。）">
+<meta property="og:updated_time" content="2017-03-03T13:02:51.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Linux内核疑点若干">
+<meta name="twitter:description" content="本文涉及的内核代码版本为2.4.0。（其余文章如不作特殊说明，也使用该版本代码。）">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2015/09/27/Linux内核疑点若干/">
+  <time datetime="2015-09-27T02:30:53.000Z">
+    2015-09-27
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">Linux内核疑点若干</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>本文涉及的内核代码版本为2.4.0。（其余文章如不作特殊说明，也使用该版本代码。）</p>
+<a id="more"></a>
+<h2 id="1-get-fs-set-fs"><a href="#1-get-fs-set-fs" class="headerlink" title="1. get_fs()/set_fs()"></a>1. get_fs()/set_fs()</h2><p>这两个函数乍一看似乎用来控制fs寄存器的值。如果不细看其内部实现，很容易被误导。比如fs/namei.c中有如下代码，segment都用来描述了，很容易被误导。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span> (!segment_eq(get_fs(), KERNEL_DS))</div><div class="line">    <span class="keyword">return</span> -EFAULT;</div></pre></td></tr></table></figure>
+<p>其实这两个函数在内核平台无关代码中有调用，因此绝不可能用来表示一个平台相关的概念。(fs寄存器是intel特有的)</p>
+<p>还好，内核代码中有说明为什么要这么命名。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/*</span></div><div class="line"> * The fs value determines whether argument validity checking should be</div><div class="line"> * performed or not.  If get_fs() == USER_DS, checking is performed, with</div><div class="line"> * get_fs() == KERNEL_DS, checking is bypassed.</div><div class="line"> *</div><div class="line"> * For historical reasons, these macros are grossly misnamed.</div><div class="line"> */</div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> MAKE_MM_SEG(s)	((mm_segment_t) &#123; (s) &#125;)</span></div><div class="line"></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> KERNEL_DS	MAKE_MM_SEG(0xFFFFFFFF)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> USER_DS		MAKE_MM_SEG(PAGE_OFFSET)</span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> get_ds()	(KERNEL_DS)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> get_fs()	(current-&gt;addr_limit)</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> set_fs(x)	(current-&gt;addr_limit = (x))</span></div></pre></td></tr></table></figure>
+<p>注释中说的很清楚，这个fs仅用来判断是否要验参数。而且由于历史原因，这个晕死人不偿命的名称就一直沿用下来。</p>
+<p>举个例子，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/*</span></div><div class="line"> * Like copy_strings, but get argv and its values from kernel memory.</div><div class="line"> */</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">copy_strings_kernel</span><span class="params">(<span class="keyword">int</span> argc,<span class="keyword">char</span> ** argv, <span class="keyword">struct</span> linux_binprm *bprm)</span></span></div><div class="line">&#123;</div><div class="line">	<span class="keyword">int</span> r;</div><div class="line">	<span class="keyword">mm_segment_t</span> oldfs = get_fs();</div><div class="line">	set_fs(KERNEL_DS); </div><div class="line">	r = copy_strings(argc, argv, bprm);</div><div class="line">	set_fs(oldfs);</div><div class="line">	<span class="keyword">return</span> r; </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>函数copy_strings_kernel()在do_execve()中会被调用，用来拷贝内核中的字符串到内核空间。这边复用了从用户空间拷贝字符串到内核空间的函数copy_strings()。但是调用之前需要把fs设置为KERNEL_DS。因为copy_strings()当中会有检查字符串地址是否小于current进程的addr_limit，而内核空间地址在用户空间之上，如果不设置fs为KERNEL_DS，则检查必然失败。（为什么要检查？如果内核代码对用户空间地址随意放行，用户程序就可以钻空子任意妄为了。）</p>
+<p>例如，copy_strings()中有如下检查，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// copy_strings() -&gt; strnlen_user() -&gt; __addr_ok()</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> __addr_ok(addr) ((unsigned long)(addr) <span class="meta-string">&lt; (current-&gt;</span>addr_limit.seg))</span></div></pre></td></tr></table></figure>
+<h2 id="2-内核代码中的物理地址和虚拟地址"><a href="#2-内核代码中的物理地址和虚拟地址" class="headerlink" title="2. 内核代码中的物理地址和虚拟地址"></a>2. 内核代码中的物理地址和虚拟地址</h2><h2 id="3-get-pte-fast"><a href="#3-get-pte-fast" class="headerlink" title="3. get_pte_fast()"></a>3. get_pte_fast()</h2><h2 id="4-内核地址空间页表如何映射到用户进程"><a href="#4-内核地址空间页表如何映射到用户进程" class="headerlink" title="4. 内核地址空间页表如何映射到用户进程"></a>4. 内核地址空间页表如何映射到用户进程</h2>
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/Linux内核/">Linux内核</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 10px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/10/linux内核汇编小结/">linux内核x86汇编小结</a>
+      </li>
+    
+      <li>
+        <a href="/2015/08/26/如何调试系统库-libcurl/">如何调试系统库(libcurl)</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>

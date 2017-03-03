@@ -1,0 +1,212 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>c语言中函数如何返回结构体 | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="如果我们需要函数返回结构体，一般会使用返回指针的方式。今天看到有库函数直接返回结构体，不禁很好奇这如何能够实现。因为X86平台上一般用eax/rax寄存器存放返回值，一个结构体可以很大，寄存器如何放的下？">
+  
+  <meta name="description" content="如果我们需要函数返回结构体，一般会使用返回指针的方式。今天看到有库函数直接返回结构体，不禁很好奇这如何能够实现。因为X86平台上一般用eax/rax寄存器存放返回值，一个结构体可以很大，寄存器如何放的下？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="c语言中函数如何返回结构体">
+<meta property="og:url" content="http://yoursite.com/2015/08/26/c语言中函数如何返回结构体/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="如果我们需要函数返回结构体，一般会使用返回指针的方式。今天看到有库函数直接返回结构体，不禁很好奇这如何能够实现。因为X86平台上一般用eax/rax寄存器存放返回值，一个结构体可以很大，寄存器如何放的下？">
+<meta property="og:updated_time" content="2017-03-03T01:48:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="c语言中函数如何返回结构体">
+<meta name="twitter:description" content="如果我们需要函数返回结构体，一般会使用返回指针的方式。今天看到有库函数直接返回结构体，不禁很好奇这如何能够实现。因为X86平台上一般用eax/rax寄存器存放返回值，一个结构体可以很大，寄存器如何放的下？">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2015/08/26/c语言中函数如何返回结构体/">
+  <time datetime="2015-08-26T13:13:48.000Z">
+    2015-08-26
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">c语言中函数如何返回结构体</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>如果我们需要函数返回结构体，一般会使用返回指针的方式。今天看到有库函数直接返回结构体，不禁很好奇这如何能够实现。因为X86平台上一般用eax/rax寄存器存放返回值，一个结构体可以很大，寄存器如何放的下？</p>
+<a id="more"></a>
+<p>要了解个中细节还得从汇编角度分析。</p>
+<p>下面进一段C语言示例程序和对应的反汇编结果</p>
+<p>C程序源码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</div><div class="line">    <span class="keyword">int</span> a;</div><div class="line">    <span class="keyword">int</span> b;</div><div class="line">    <span class="keyword">char</span> c[<span class="number">3</span>];</div><div class="line">&#125; <span class="keyword">foo_t</span>;</div><div class="line">	</div><div class="line"><span class="keyword">foo_t</span> global_a;</div><div class="line">	</div><div class="line"><span class="function"><span class="keyword">static</span> foo_t</span></div><div class="line"><span class="title">foo</span> <span class="params">(<span class="keyword">void</span>)</span></div><div class="line">&#123;</div><div class="line">    global_a.a = <span class="number">1</span>;</div><div class="line">    global_a.b = <span class="number">2</span>;</div><div class="line">    global_a.c[<span class="number">0</span>] = <span class="string">'a'</span>;</div><div class="line">    global_a.c[<span class="number">1</span>] = <span class="string">'b'</span>;</div><div class="line">    global_a.c[<span class="number">2</span>] = <span class="string">'c'</span>;</div><div class="line">    <span class="keyword">return</span> global_a;</div><div class="line">&#125;</div><div class="line">	</div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">(<span class="keyword">void</span>)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">foo_t</span> a;</div><div class="line">	</div><div class="line">    a = foo();</div><div class="line">	</div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>linux x86_64上反汇编后的（gcc -s 1.c 然后查看1.s文件）</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line">.type   foo, @function</div><div class="line">foo:</div><div class="line">.LFB2:</div><div class="line">        pushq   %rbp</div><div class="line">.LCFI0:</div><div class="line">        movq    %rsp, %rbp</div><div class="line">.LCFI1:</div><div class="line">        movl    $1, global_a(%rip)</div><div class="line">        movl    $2, global_a+4(%rip)</div><div class="line">        movb    $97, global_a+8(%rip)</div><div class="line">        movb    $98, global_a+9(%rip)</div><div class="line">        movb    $99, global_a+10(%rip)</div><div class="line">        movq    global_a(%rip), %rax</div><div class="line">        movq    %rax, -16(%rbp)</div><div class="line">        movl    global_a+8(%rip), %eax</div><div class="line">        movl    %eax, -8(%rbp)</div><div class="line">        movq    -16(%rbp), %rax</div><div class="line">        movl    -8(%rbp), %edx</div><div class="line">        leave</div><div class="line">        ret</div><div class="line">.LFE2:</div><div class="line">        .size   foo, .-foo</div><div class="line">.globl main</div><div class="line">        .type   main, @function</div><div class="line">main:</div><div class="line">.LFB3:</div><div class="line">        pushq   %rbp</div><div class="line">.LCFI2:</div><div class="line">        movq    %rsp, %rbp</div><div class="line">.LCFI3:</div><div class="line">        subq    $32, %rsp</div><div class="line">.LCFI4:</div><div class="line">        call    foo</div><div class="line">        movq    %rax, -32(%rbp)</div><div class="line">        movl    %edx, -24(%rbp)</div><div class="line">        movq    -32(%rbp), %rax</div><div class="line">        movq    %rax, -16(%rbp)</div><div class="line">        movl    -24(%rbp), %eax</div><div class="line">        movl    %eax, -8(%rbp)</div><div class="line">        movl    $0, %eax</div><div class="line">        leave</div><div class="line">        ret</div><div class="line">.LFE3:</div></pre></td></tr></table></figure>
+<p>上一段程序里面返回了foo_t这个结构，foo_t占12字节（考虑padding），所以一个寄存器（8字节）根本无法容纳。那编译器怎么处理的呢？用两个寄存器呗！</p>
+<p>这里简单解释一下那段汇编。8-12行对应C里面12-16行的赋值。第13行把global_a结构开始的8字节内容存到rax内，然后紧接着14行再把rax的内容暂存到堆栈上。第15行将global_a结构的最后4字节内容存入eax，第16行再把eax内容同样暂存到堆栈上。第17，18行将之前暂存的数据放入rax和edx内做为返回数据。那为啥不直接拷贝到rax和edx里面？我怀疑编译器一根筋吧。。。</p>
+<p>那么调用者怎么处理这些返回值的呢？第33行调用完毕之后，34/35行将rax/edx内的返回值暂存到堆栈中。然后36-39行把这些暂存值填到变量a里面。后面40-42行设置返回值，平衡堆栈，搞定收工。</p>
+<p>这里多说两句36-39行代码，a的地址应该是-16(%rbp)，要记住堆栈是逆序生长的，而变量的地址是内存区的起始地址。</p>
+<p>上面演示的这段foo_t才12字节。那如果结构体很大，编译器怎么处理的？一切用代码说话。</p>
+<p>这段c代码定义了一个巨大无比的结构（相对寄存器大小）。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> &#123;</div><div class="line">    <span class="keyword">int</span> a;</div><div class="line">    <span class="keyword">int</span> b;</div><div class="line">    <span class="keyword">char</span> c[<span class="number">128</span>];</div><div class="line">&#125; <span class="keyword">foo_t</span>;</div><div class="line"></div><div class="line"><span class="keyword">foo_t</span> global_a;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> foo_t</span></div><div class="line"><span class="title">foo</span> <span class="params">(<span class="keyword">void</span>)</span></div><div class="line">&#123;</div><div class="line">    global_a.a = <span class="number">1</span>;</div><div class="line">    global_a.b = <span class="number">2</span>;</div><div class="line">    global_a.c[<span class="number">0</span>] = <span class="string">'a'</span>;</div><div class="line">    global_a.c[<span class="number">1</span>] = <span class="string">'b'</span>;</div><div class="line">    global_a.c[<span class="number">2</span>] = <span class="string">'c'</span>;</div><div class="line">    <span class="keyword">return</span> global_a;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span> <span class="params">(<span class="keyword">void</span>)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">foo_t</span> a;</div><div class="line"></div><div class="line">    a = foo();</div><div class="line"></div><div class="line">    <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>我们看看反汇编后的代码</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line">foo:</div><div class="line">.LFB2:</div><div class="line">	pushq	%rbp</div><div class="line">.LCFI0:</div><div class="line">	movq	%rsp, %rbp</div><div class="line">.LCFI1:</div><div class="line">	pushq	%rbx</div><div class="line">.LCFI2:</div><div class="line">	subq	$<span class="number">8</span>, %rsp</div><div class="line">.LCFI3:</div><div class="line">	movq	%rdi, %rbx</div><div class="line">	movl	$<span class="number">1</span>, global_a(%rip)</div><div class="line">	movl	$<span class="number">2</span>, global_a+<span class="number">4</span>(%rip)</div><div class="line">	movb	$<span class="number">97</span>, global_a+<span class="number">8</span>(%rip)</div><div class="line">	movb	$<span class="number">98</span>, global_a+<span class="number">9</span>(%rip)</div><div class="line">	movb	$<span class="number">99</span>, global_a+<span class="number">10</span>(%rip)</div><div class="line">	movq	%rbx, %rdi</div><div class="line">	movl	$global_a, %esi</div><div class="line">	movl	$<span class="number">136</span>, %edx</div><div class="line">	call	<span class="built_in">memcpy</span></div><div class="line">	movq	%rbx, %rax</div><div class="line">	addq	$<span class="number">8</span>, %rsp</div><div class="line">	popq	%rbx</div><div class="line">	leave</div><div class="line">	ret</div><div class="line">.LFE2:</div><div class="line">	.size	foo, .-foo</div><div class="line">.globl main</div><div class="line">	.type	main, @function</div><div class="line">main:</div><div class="line">.LFB3:</div><div class="line">	pushq	%rbp</div><div class="line">.LCFI4:</div><div class="line">	movq	%rsp, %rbp</div><div class="line">.LCFI5:</div><div class="line">	subq	$<span class="number">144</span>, %rsp</div><div class="line">.LCFI6:</div><div class="line">	leaq	<span class="number">-144</span>(%rbp), %rdi</div><div class="line">	call	foo</div><div class="line">	movl	$<span class="number">0</span>, %eax</div><div class="line">	leave</div><div class="line">	ret</div></pre></td></tr></table></figure>
+<p>从汇编代码可以看到，编译器很机智，直接把结构体a的地址作为一个隐含参数来调用foo。具体来说，在39行调用foo之前，36行分配了堆栈来存放变量a（由于call指令会将紧着着的指令地址入栈，比如这里的第40行，144字节里面有8字节存放这个地址），38行把a的地址放入寄存器edi内。然后在函数foo内部，12-16行赋值。在11行会将rdi的值暂存rbx，17行再取出来，我估计为了防止12-16行之间的代码会用到rdi。什么？看了8遍没看出来哪行指令会用到rdi？还是那句话，编译器一根筋，这么循规蹈矩弄一下没啥坏处。然后18行设置目的地址寄存器（global_a的地址），19行设置待拷贝内存长度，20行直接memcpy，然后21行将返回值设置为变量a的地址。后面22-25行堆栈平衡，收工。</p>
+<p>当然也可以在gdb里面跟踪上述汇编代码，简单说来，gcc加g选项添加调试信息。然后gdb调试对应程序，disassemble命令反汇编出当前函数，然后ni/si运行下一条指令，根据pc值跟之前用disassemble命令反汇编的对应起来。ni不进入函数跟踪，si进入函数跟踪。info reg rax查看rax寄存器的值。</p>
+<p>最后来个收尾。简单一行调用居然隐藏了这么多细节。所以个人并不喜欢这种直接返回结构体的写法，还是用指针更加一目了然。</p>
+
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/c语言/">c语言</a>, <a class="tags-link" href="/tags/汇编/">汇编</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 10px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/10/linux内核汇编小结/">linux内核x86汇编小结</a>
+      </li>
+    
+      <li>
+        <a href="/2015/08/26/如何调试系统库-libcurl/">如何调试系统库(libcurl)</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>

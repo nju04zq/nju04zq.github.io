@@ -1,0 +1,214 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>为何telnet到127.0.0.1会有5秒延迟？ | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="最近在写一个简单的HTTP客户端/服务器端。在验证服务器端的时候，用到了telnet工具。但是在每次telnet连接的时候，都会有数秒的延迟。按说telnet连接到本地，不会有网络延迟存在。那这几秒的延迟出在哪个环节上呢？">
+  
+  <meta name="description" content="最近在写一个简单的HTTP客户端/服务器端。在验证服务器端的时候，用到了telnet工具。但是在每次telnet连接的时候，都会有数秒的延迟。按说telnet连接到本地，不会有网络延迟存在。那这几秒的延迟出在哪个环节上呢？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="为何telnet到127.0.0.1会有5秒延迟？">
+<meta property="og:url" content="http://yoursite.com/2017/03/03/telnet-latency/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="最近在写一个简单的HTTP客户端/服务器端。在验证服务器端的时候，用到了telnet工具。但是在每次telnet连接的时候，都会有数秒的延迟。按说telnet连接到本地，不会有网络延迟存在。那这几秒的延迟出在哪个环节上呢？">
+<meta property="og:updated_time" content="2017-03-03T14:05:07.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="为何telnet到127.0.0.1会有5秒延迟？">
+<meta name="twitter:description" content="最近在写一个简单的HTTP客户端/服务器端。在验证服务器端的时候，用到了telnet工具。但是在每次telnet连接的时候，都会有数秒的延迟。按说telnet连接到本地，不会有网络延迟存在。那这几秒的延迟出在哪个环节上呢？">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2017/03/03/telnet-latency/">
+  <time datetime="2017-03-03T12:57:14.000Z">
+    2017-03-03
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">为何telnet到127.0.0.1会有5秒延迟？</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>最近在写一个<a href="https://github.com/nju04zq/HTTP_POST" target="_blank" rel="external">简单的HTTP客户端/服务器端</a>。在验证服务器端的时候，用到了telnet工具。但是在每次telnet连接的时候，都会有数秒的延迟。按说telnet连接到本地，不会有网络延迟存在。那这几秒的延迟出在哪个环节上呢？</p>
+<a id="more"></a>
+<p>我们可以借助strace来分析telnet背后的细节。这个工具能够追踪进程的一切系统调用。</p>
+<p>strace用法如下，-tt选项能够显示毫秒精度的时间戳。</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">strace -tt telnet <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> <span class="number">9000</span> &gt;&amp; /tmp/strace.log</div></pre></td></tr></table></figure>
+<p>检查log（相关片段如下所示），原来poll系统调用等待了5秒。往前看，有创建一个socket，然后连接到192.168.11.1的53端口。53端口是用来做DNS解析的，这里解析的对象是机器的hostname，<em>vm-dev</em>。但是这个IP根本不可达，所以poll只能干等，直到超时。</p>
+<figure class="highlight taggerscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">21:21:16.032995 socket(PF_INET, SOCK_DGRAM|SOCK_NONBLOCK, IPPROTO_IP) = 3</div><div class="line">21:21:16.033027 connect(3, &#123;sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("192.168.11.1")&#125;, 16) = 0</div><div class="line">21:21:16.033066 gettimeofday(&#123;1488547276, 33072&#125;, NULL) = 0</div><div class="line">21:21:16.033085 poll([&#123;fd=3, events=POLLOUT&#125;], 1, 0) = 1 ([&#123;fd=3, revents=POLLOUT&#125;])</div><div class="line">21:21:16.033107 sendto(3, "<span class="symbol">\3</span>655<span class="symbol">\1</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\1</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\6</span>vm-dev<span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\1</span><span class="symbol">\0</span><span class="symbol">\1</span>", 24, MSG_NOSIGNAL, NULL, 0) = 24</div><div class="line">21:21:16.033201 poll([&#123;fd=3, events=POLLIN|POLLOUT&#125;], 1, 5000) = 1 ([&#123;fd=3, revents=POLLOUT&#125;])</div><div class="line">21:21:16.033226 sendto(3, "W-<span class="symbol">\1</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\1</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\6</span>vm-dev<span class="symbol">\0</span><span class="symbol">\0</span><span class="symbol">\3</span>4<span class="symbol">\0</span><span class="symbol">\1</span>", 24, MSG_NOSIGNAL, NULL, 0) = 24</div><div class="line">21:21:16.033275 gettimeofday(&#123;1488547276, 33284&#125;, NULL) = 0</div><div class="line">21:21:16.033295 poll([&#123;fd=3, events=POLLIN&#125;], 1, 4999) = 0 (Timeout)</div><div class="line">21:21:21.037931 socket(PF_INET, SOCK_DGRAM|SOCK_NONBLOCK, IPPROTO_IP) = 4</div><div class="line">21:21:21.037995 connect(4, &#123;sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("8.8.4.4")&#125;, 16) = 0</div><div class="line">I</div></pre></td></tr></table></figure>
+<p>这里有两个问题，我用telnet连接到127.0.0.1，为什么要解析客户机的hostname？那个192.168.11.1的DNS地址哪里来的？</p>
+<p>Linux的DNS服务器地址存放在 <em>/etc/resolv.conf</em> 中，strace抓到的系统调用log也能看到读取这个文件的记录。在这个文件里面确实找到了上面见到的IP地址，192.168.11.1。这个Linux系统跑在虚拟机里面，宿主系统是OS X。前一段时间我曾经给OS X系统配置过DNS地址，就是上面的IP地址。看样子虚拟机也把这个配置拿进来用了。不过最近局域网的网段改了，那个DNS地址却没记得删掉。现在那个地址自然是不可达的。</p>
+<p>那还剩下一个关键问题，telnet为什么要解析系统的hostname？没办法，只能从telnet的源代码入手了。把gdb叫过来，安装需要的debug模块，在5秒延迟的时候敲CTRL+C暂停telnet进程，检查进程的调用栈。调用栈长这样，</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">#<span class="number">8</span>  <span class="number">0x00007ffff76dff30</span> <span class="keyword">in</span> getaddrinfo (name=<span class="number">0x7fffffffe0f0</span> <span class="string">"vm-dev"</span>,</div><div class="line">    service=&lt;value optimized <span class="keyword">out</span>&gt;, hints=<span class="number">0x7fffffffe0b0</span>, pai=<span class="number">0x7fffffffe0e0</span>)</div><div class="line">    <span class="meta">at</span> ../sysdeps/posix/getaddrinfo.c:<span class="number">2385</span></div><div class="line">#<span class="number">9</span>  <span class="number">0x00007ffff7ff0def</span> <span class="keyword">in</span> env_init () <span class="meta">at</span> commands.c:<span class="number">1676</span></div><div class="line">#<span class="number">10</span> <span class="number">0x00007ffff7ff7439</span> <span class="keyword">in</span> init_telnet () <span class="meta">at</span> telnet.c:<span class="number">145</span></div><div class="line">#<span class="number">11</span> <span class="number">0x00007ffff7ff1bc3</span> <span class="keyword">in</span> tninit () <span class="meta">at</span> main.c:<span class="number">68</span></div><div class="line">#<span class="number">12</span> <span class="number">0x00007ffff7ff1be8</span> <span class="keyword">in</span> main (argc=<span class="number">3</span>, argv=<span class="number">0x7fffffffe2e8</span>) <span class="meta">at</span> main.c:<span class="number">123</span></div></pre></td></tr></table></figure>
+<p>调用栈中的<em>getaddrinfo</em>函数就是用来做DNS解析的。这跟strace观察到的结果一致。用<em>list</em>看一下<em>commands.c:1676</em>的源代码。原来telnet为了给某个环境变量<em>DISPLAY</em>赋值，尝试着获取一个更规范的系统hostname（按照源码，hostname里面要有<em>.</em>字符），也就是DNS解析结果的cname字段。</p>
+<p>按照<a href="https://tools.ietf.org/html/rfc1572" target="_blank" rel="external">telnet的rfc</a>描述，DISPLAY环境变量的用处和格式如下。</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">DISPLAY  This <span class="built_in">variable</span> is used <span class="built_in">to</span> transmit <span class="keyword">the</span> X display location</div><div class="line">         <span class="keyword">of</span> <span class="keyword">the</span> client.  The <span class="built_in">format</span> <span class="keyword">for</span> <span class="keyword">the</span> <span class="built_in">value</span> <span class="keyword">of</span> <span class="keyword">the</span> DISPLAY</div><div class="line">         <span class="built_in">variable</span> is:</div><div class="line"></div><div class="line">         &lt;host&gt;:&lt;dispnum&gt;[.&lt;screennum&gt;]</div></pre></td></tr></table></figure>
+<p>至此，5秒的延迟算是水落石出了。解决这个问题很简单，删掉那个不可达的DNS地址就行了。</p>
+<p>这个问题也很容易重现。步骤如下，</p>
+<ol>
+<li>启动httpd服务，sudo service httpd start</li>
+<li>修改/etc/resolv.conf文件，最开始加上nameserver 192.168.11.1</li>
+<li>telnet 127.0.0.1 80，就可以重现了。</li>
+<li>记得把/etc/resolv.conf改回去。:-p</li>
+</ol>
+
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/DNS/">DNS</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 10px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/10/linux内核汇编小结/">linux内核x86汇编小结</a>
+      </li>
+    
+      <li>
+        <a href="/2015/08/26/如何调试系统库-libcurl/">如何调试系统库(libcurl)</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>

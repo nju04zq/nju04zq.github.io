@@ -1,0 +1,206 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>如何调试系统库(libcurl) | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="最近用libcurl库的时候遇到一些问题，想用GDB深入跟踪库的源代码。奈何系统自带库一则不附源码，二则编译的时候加过优化选项，没法用GDB深入调试。捣鼓了半天，找到了调试系统库的办法。">
+  
+  <meta name="description" content="最近用libcurl库的时候遇到一些问题，想用GDB深入跟踪库的源代码。奈何系统自带库一则不附源码，二则编译的时候加过优化选项，没法用GDB深入调试。捣鼓了半天，找到了调试系统库的办法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何调试系统库(libcurl)">
+<meta property="og:url" content="http://yoursite.com/2015/08/26/如何调试系统库-libcurl/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="最近用libcurl库的时候遇到一些问题，想用GDB深入跟踪库的源代码。奈何系统自带库一则不附源码，二则编译的时候加过优化选项，没法用GDB深入调试。捣鼓了半天，找到了调试系统库的办法。">
+<meta property="og:updated_time" content="2017-03-03T01:48:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何调试系统库(libcurl)">
+<meta name="twitter:description" content="最近用libcurl库的时候遇到一些问题，想用GDB深入跟踪库的源代码。奈何系统自带库一则不附源码，二则编译的时候加过优化选项，没法用GDB深入调试。捣鼓了半天，找到了调试系统库的办法。">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2015/08/26/如何调试系统库-libcurl/">
+  <time datetime="2015-08-26T13:24:51.000Z">
+    2015-08-26
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">如何调试系统库(libcurl)</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>最近用libcurl库的时候遇到一些问题，想用GDB深入跟踪库的源代码。奈何系统自带库一则不附源码，二则编译的时候加过优化选项，没法用GDB深入调试。捣鼓了半天，找到了调试系统库的办法。</p>
+<a id="more"></a>
+<p>首先，到网上下载libcurl库对应的源代码。然后解压，configure。configure的时候指定库的存放位置（必须是绝对路径），而且要告诉它用debug模式编译。比如运行如下命令，</p>
+<pre><code>./configure --prefix=“/xxxxx/curl/build&quot; --enable-debug
+</code></pre><p>然后是老一套，make，make install。编译好的库就在build/lib下面。</p>
+<p>接着，需要在编译目标程序的时候指定使用这个库，可以这么干，</p>
+<pre><code>gcc -g -o test test.c -L/xxxxx/curl/build/lib -lcurl
+</code></pre><p>记得设置环境变量，不然系统不知道到哪里找这个库，</p>
+<pre><code>export LD_LIBRARY_PATH=/xxxxx/curl/build/lib:$LD_LIBRARY_PATH
+</code></pre><p>最后确认一下，编译好的test是不是用的我们指定的库，</p>
+<pre><code>ldd test
+</code></pre><p>应该会看到</p>
+<pre><code>libcurl.so.4 =&gt; /xxxxx/curl/build/lib/libcurl.so.xxxx
+</code></pre><p>到这里就完工了，可以幸福的用GDB调试libcurl库咯。</p>
+
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/gdb/">gdb</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 10px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/10/linux内核汇编小结/">linux内核x86汇编小结</a>
+      </li>
+    
+      <li>
+        <a href="/2015/08/26/如何调试系统库-libcurl/">如何调试系统库(libcurl)</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>

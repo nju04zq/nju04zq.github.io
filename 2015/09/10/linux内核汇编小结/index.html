@@ -1,0 +1,285 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>linux内核x86汇编小结 | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="汇编在linux内核中比重不大，但是很难啃。一部分原因在于汇编指令，某些有段时间不看就忘记了。另外一部分原因是C中内联汇编比较难懂。这里做个小结，方便以后复习汇编知识。">
+  
+  <meta name="description" content="汇编在linux内核中比重不大，但是很难啃。一部分原因在于汇编指令，某些有段时间不看就忘记了。另外一部分原因是C中内联汇编比较难懂。这里做个小结，方便以后复习汇编知识。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="linux内核x86汇编小结">
+<meta property="og:url" content="http://yoursite.com/2015/09/10/linux内核汇编小结/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="汇编在linux内核中比重不大，但是很难啃。一部分原因在于汇编指令，某些有段时间不看就忘记了。另外一部分原因是C中内联汇编比较难懂。这里做个小结，方便以后复习汇编知识。">
+<meta property="og:updated_time" content="2017-03-03T01:48:50.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="linux内核x86汇编小结">
+<meta name="twitter:description" content="汇编在linux内核中比重不大，但是很难啃。一部分原因在于汇编指令，某些有段时间不看就忘记了。另外一部分原因是C中内联汇编比较难懂。这里做个小结，方便以后复习汇编知识。">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2015/09/10/linux内核汇编小结/">
+  <time datetime="2015-09-10T07:08:22.000Z">
+    2015-09-10
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">linux内核x86汇编小结</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>汇编在linux内核中比重不大，但是很难啃。一部分原因在于汇编指令，某些有段时间不看就忘记了。另外一部分原因是C中内联汇编比较难懂。这里做个小结，方便以后复习汇编知识。</p>
+<a id="more"></a>
+<h1 id="x86汇编指令"><a href="#x86汇编指令" class="headerlink" title="x86汇编指令"></a>x86汇编指令</h1><p>关于x86指令，GNU使用的和INTEL文档里面的有些不同。一个区别是，对于双字节，GNU用l，INTEL用d。 比如INTEL文档里面的指令MOVSD，对应GNU的版本就是movsl。<a href="https://docs.oracle.com/cd/E19120-01/open.solaris/817-5477/index.html" target="_blank" rel="external">这里</a>有GNU格式汇编的文档。</p>
+<h2 id="MOVSB-MOVSW-MOVSD-MOVSQ"><a href="#MOVSB-MOVSW-MOVSD-MOVSQ" class="headerlink" title="MOVSB/MOVSW/MOVSD/MOVSQ"></a>MOVSB/MOVSW/MOVSD/MOVSQ</h2><p>MOVB指令将ESI中内存地址存放的内容（单字节）复制到EDI指向的内存区域，然后将ESI/EDI中的地址+1（DF标志位为0）或者-1（DF标志位为1）。</p>
+<p>其余指令做类似的事情，除了复制的内容大小有区别</p>
+<h2 id="STOSB-STOSW-STOSD-STOSQ—Store-String"><a href="#STOSB-STOSW-STOSD-STOSQ—Store-String" class="headerlink" title="STOSB/STOSW/STOSD/STOSQ—Store String"></a>STOSB/STOSW/STOSD/STOSQ—Store String</h2><p>STOSB指令将寄存器AL中的内容复制到EDI中的目的地址，然后将EDI中地址+1（DF标志位为0）或者-1（DF标志位为1）。</p>
+<p>其余指令做类似的事情，除了复制的内容大小有区别</p>
+<h2 id="LODSB-LODSW-LODSD-LODSQ—Load-String"><a href="#LODSB-LODSW-LODSD-LODSQ—Load-String" class="headerlink" title="LODSB/LODSW/LODSD/LODSQ—Load String"></a>LODSB/LODSW/LODSD/LODSQ—Load String</h2><p>LODSB指令将EDI指向的内容复制到AL，然后将ESI中地址+1（DF标志位为0）或者-1（DF标志位为1）。</p>
+<p>其余指令做类似的事情，除了复制的内容大小和目的寄存器有区别</p>
+<h2 id="SCASB-SCASW-SCASD—Scan-String"><a href="#SCASB-SCASW-SCASD—Scan-String" class="headerlink" title="SCASB/SCASW/SCASD—Scan String"></a>SCASB/SCASW/SCASD—Scan String</h2><p>SCASB指令将寄存器中AL的内容和EDI中目的内存地址对应的内容比较，并设置相应的标志位。然后将EDI中地址+1（DF标志位为0）或者-1（DF标志位为1）。</p>
+<p>其余指令做类似的事情，除了复制的内容大小有区别</p>
+<h2 id="REP-REPE-REPZ-REPNE-REPNZ"><a href="#REP-REPE-REPZ-REPNE-REPNZ" class="headerlink" title="REP/REPE/REPZ/REPNE/REPNZ"></a>REP/REPE/REPZ/REPNE/REPNZ</h2><p>REP前缀主要配合这些指令，INS, OUTS, MOVS, LODS, STOS，其余的主要配合如CMPS, SCAS(REP本身不是一个独立指令)。</p>
+<p>REP前缀的执行逻辑可以用如下伪代码描述</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">while</span> ECX != <span class="number">0</span>:</div><div class="line">    Execute associated <span class="built_in">string</span> instruction</div><div class="line">    ECX -= <span class="number">1</span></div><div class="line">    <span class="keyword">if</span> ECX == <span class="number">0</span>:</div><div class="line">        <span class="keyword">break</span></div><div class="line">    <span class="keyword">if</span> FLAG meets prefix: #<span class="keyword">for</span> REPE/REPZ/REPZE/REPNZ</div><div class="line">        <span class="keyword">break</span></div></pre></td></tr></table></figure>
+<p>下面这个表格列举了REP族指令的结束条件</p>
+<table>
+<thead>
+<tr>
+<th>Repeat Prefix</th>
+<th style="text-align:center">Termination Condition 1</th>
+<th style="text-align:center">Termination Condition 2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REP</td>
+<td style="text-align:center">RCX or (E)CX = 0</td>
+<td style="text-align:center">None</td>
+</tr>
+<tr>
+<td>REPE/REPZ</td>
+<td style="text-align:center">RCX or (E)CX = 0</td>
+<td style="text-align:center">ZF = 0</td>
+</tr>
+<tr>
+<td>REPNE/REPNZ</td>
+<td style="text-align:center">RCX or (E)CX = 0</td>
+<td style="text-align:center">ZF = 1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="LEA—Load-Effective-Address"><a href="#LEA—Load-Effective-Address" class="headerlink" title="LEA—Load Effective Address"></a>LEA—Load Effective Address</h2><p>LEA指令的主要作用是做地址计算。 GNU汇编中的寻址写法是，section:disp(base, index, scale)，对应地址section:(base+index*scale+disp)。其中，base和index必须是通用寄存器，scale取值必须是1,2,4,8中之一。</p>
+<p>下面一段内联汇编程序说明了LEA的用法，以及和MOV指令的区别。（gdb中可以通过命令disassembly/ni/info register xxx调试汇编）</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">asm</span>(<span class="string">"xorl %ecx, %ecx"</span>);</div><div class="line"><span class="keyword">asm</span>(<span class="string">"lea (%ebp), %ecx"</span>);    <span class="comment">//%ecx = %ebp</span></div><div class="line"><span class="keyword">asm</span>(<span class="string">"xorl %ecx, %ecx"</span>);</div><div class="line"><span class="keyword">asm</span>(<span class="string">"movl %ebp, %ecx"</span>);     <span class="comment">//%ecx = %ebp</span></div><div class="line"><span class="keyword">asm</span>(<span class="string">"xorl %ecx, %ecx"</span>);</div><div class="line"><span class="keyword">asm</span>(<span class="string">"lea -4(%ebp), %ecx"</span>);  <span class="comment">//%ecx = %ebp-4</span></div><div class="line"><span class="keyword">asm</span>(<span class="string">"xorl %ecx, %ecx"</span>);</div><div class="line"><span class="keyword">asm</span>(<span class="string">"movl (%ebp), %ecx"</span>);   <span class="comment">//%ecx = *%ebp</span></div></pre></td></tr></table></figure>
+<p>LEA指令另外一个比较常见的用法是，做一些简单的计算。比如，</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">asm</span>(<span class="string">"movl $100, %ecx"</span>);</div><div class="line"><span class="keyword">asm</span>(<span class="string">"movl $10, %edx"</span>);</div><div class="line"><span class="keyword">asm</span>(<span class="string">"lea 1(%ecx, %edx, 4), %ecx"</span>); <span class="comment">//%ecx = %ecx+%ebx*4+1</span></div></pre></td></tr></table></figure>
+<h1 id="内联汇编"><a href="#内联汇编" class="headerlink" title="内联汇编"></a>内联汇编</h1><p>内联汇编的基本用法可以参考linux内核情景分析和<a href="http://www.ibm.com/developerworks/library/l-ia/index.html" target="_blank" rel="external">这篇文章</a>。 这篇<a href="http://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html" target="_blank" rel="external">howto</a>则详细介绍了内联汇编。</p>
+<p>内联汇编的格式如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">asm</span>(assembler <span class="keyword">template</span></div><div class="line">    : output operands             (optional, 输出部)</div><div class="line">    : input operands              (optional, 输入部)</div><div class="line">    : <span class="built_in">list</span> of clobbered registers (optional, 损坏部)</div><div class="line">    );</div></pre></td></tr></table></figure>
+<p>输入输出部里面的寄存器或者内存标示符参考如下表格（只列举了常见的）</p>
+<table>
+<thead>
+<tr>
+<th>标示符</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a, b, c, d</td>
+<td>eax, ebx, ecx, edx</td>
+</tr>
+<tr>
+<td>q</td>
+<td>one in eax/ebx/ecx/edx</td>
+</tr>
+<tr>
+<td>S, D</td>
+<td>esi, edi</td>
+</tr>
+<tr>
+<td>r</td>
+<td>any register</td>
+</tr>
+<tr>
+<td>&amp;</td>
+<td>Make sure input/ouput in different register</td>
+</tr>
+<tr>
+<td>m</td>
+<td>Read from memory</td>
+</tr>
+<tr>
+<td>i</td>
+<td>An immediate integer</td>
+</tr>
+</tbody>
+</table>
+<h2 id="几个例子"><a href="#几个例子" class="headerlink" title="几个例子"></a>几个例子</h2><h3 id="strlen"><a href="#strlen" class="headerlink" title="strlen"></a>strlen</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> size_t <span class="title">strlen</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> * s)</span></span></div><div class="line">&#123;</div><div class="line"><span class="keyword">int</span> d0;</div><div class="line"><span class="keyword">register</span> <span class="keyword">int</span> __res;</div><div class="line">__asm__ __volatile__(</div><div class="line">	<span class="string">"repne\n\t"</span>    <span class="comment">//循环至al != *edi, 循环中edi++, ecx--</span></div><div class="line">	<span class="string">"scasb\n\t"</span></div><div class="line">	<span class="string">"notl %0\n\t"</span>  <span class="comment">//ecx的值取反，想当于0xffffffff-ecx，对于空字符串，ecx现在为1</span></div><div class="line">	<span class="string">"decl %0"</span>      <span class="comment">//循环中ecx在检查flag之前递减，这边需要补偿</span></div><div class="line">	:<span class="string">"=c"</span> (__res), <span class="string">"=&amp;D"</span> (d0) <span class="comment">// __res=ecx, d0=edi</span></div><div class="line">	:<span class="string">"1"</span> (s),<span class="string">"a"</span> (<span class="number">0</span>), <span class="string">"0"</span> (<span class="number">0xffffffff</span>)); <span class="comment">//esi=s, eax=0, ecx= 0xffffffff</span></div><div class="line"><span class="keyword">return</span> __res;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="strnlen-user"><a href="#strnlen-user" class="headerlink" title="strnlen_user"></a>strnlen_user</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/*</span></div><div class="line"> * Return the size of a string (including the ending 0)</div><div class="line"> *</div><div class="line"> * Return 0 on exception, a value greater than N if too long</div><div class="line"> */</div><div class="line"><span class="comment">//要注意看注释，返回的是字符串大小，包括\0</span></div><div class="line"><span class="comment">//当然这种函数名本身是个奇葩</span></div><div class="line"><span class="comment">//如果strlen(s)&gt;=n, 返回n+1, 如果strlen(s)&lt;n, 返回strlen(s)+1</span></div><div class="line"><span class="comment">//错误情况下返回0</span></div><div class="line"><span class="function"><span class="keyword">long</span> <span class="title">strnlen_user</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> *s, <span class="keyword">long</span> n)</span> <span class="comment">//n是最大长度</span></span></div><div class="line">&#123;</div><div class="line">    <span class="comment">//addr ok, mask=0xffffffff, otherwise 0x0</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> mask = -__addr_ok(s);</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> res, tmp;</div><div class="line"></div><div class="line">    __asm__ __volatile__(</div><div class="line">        <span class="string">"    andl %0,%%ecx\n"</span> <span class="comment">//ecx &amp;= n, 如mask==0则ecx=0, 否则ecx=n</span></div><div class="line">        <span class="string">"0:  repne; scasb\n"</span>  <span class="comment">//循环至*edi==0或ecx == 0</span></div><div class="line">        <span class="string">"    setne %%al\n"</span>    <span class="comment">//如因ecx==0循环结束, 则al=1, 否则al=0</span></div><div class="line">                              <span class="comment">//注意repne不会设置标志位</span></div><div class="line">        <span class="string">"    subl %%ecx,%0\n"</span> <span class="comment">//n -= ecx, for empty string, n=1</span></div><div class="line">        <span class="string">"    addl %0,%%eax\n"</span> <span class="comment">//eax += n, 如果strlen&gt;=n, 则返回n+1</span></div><div class="line">        <span class="string">"1:\n"</span></div><div class="line">        <span class="string">".section .fixup,\"ax\"\n"</span></div><div class="line">        <span class="string">"2:  xorl %%eax,%%eax\n"</span></div><div class="line">        <span class="string">"    jmp 1b\n"</span></div><div class="line">        <span class="string">".previous\n"</span></div><div class="line">        <span class="string">".section __ex_table,\"a\"\n"</span></div><div class="line">        <span class="string">"    .align 4\n"</span></div><div class="line">        <span class="string">"    .long 0b,2b\n"</span></div><div class="line">        <span class="string">".previous"</span></div><div class="line">        :<span class="string">"=r"</span> (n), <span class="string">"=D"</span> (s), <span class="string">"=a"</span> (res), <span class="string">"=c"</span> (tmp)</div><div class="line">        <span class="comment">//输出res=eax,其余输出没有作用</span></div><div class="line">        :<span class="string">"0"</span> (n), <span class="string">"1"</span> (s), <span class="string">"2"</span> (<span class="number">0</span>), <span class="string">"3"</span> (mask)</div><div class="line">        <span class="comment">//输入%0=n, edi=s, eax=0, ecx=mask</span></div><div class="line">        :<span class="string">"cc"</span>);</div><div class="line">    <span class="keyword">return</span> res &amp; mask;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="copy-user-zeroing"><a href="#copy-user-zeroing" class="headerlink" title="__copy_user_zeroing"></a>__copy_user_zeroing</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> __copy_user_zeroing(to,from,size)                \</span></div><div class="line">do &#123;                              \</div><div class="line">    int __d0, __d1;               \</div><div class="line">    __asm__ __volatile__(         \</div><div class="line">        <span class="meta-string">"0:  rep; movsl\n"</span>        \ <span class="comment">/* 拷贝ecx个四字节 */</span></div><div class="line">        <span class="string">"    movl %3,%0\n"</span>        \ <span class="comment">/* ecx=剩余单字节数目 */</span></div><div class="line">        <span class="string">"1:  rep; movsb\n"</span>        \ <span class="comment">/* 拷贝ecx个单字节 */</span></div><div class="line">        <span class="string">"2:\n"</span>                    \</div><div class="line">        <span class="string">".section .fixup,\"ax\"\n"</span>\ <span class="comment">/* 拷贝时候出问题 */</span></div><div class="line">        <span class="string">"3:  lea 0(%3,%0,4),%0\n"</span> \ <span class="comment">/* ecx=ecx*4+%3，剩余未拷贝字节数目 */</span></div><div class="line">        <span class="string">"4:  pushl %0\n"</span>          \ <span class="comment">/* ecx在下面的循环中会改变，先保存 */</span></div><div class="line">        <span class="string">"    pushl %%eax\n"</span>       \</div><div class="line">        <span class="string">"    xorl %%eax,%%eax\n"</span>  \</div><div class="line">        <span class="string">"    rep; stosb\n"</span>        \ <span class="comment">/* 把目的内存剩余部分填0 */</span></div><div class="line">        <span class="string">"    popl %%eax\n"</span>        \</div><div class="line">        <span class="string">"    popl %0\n"</span>           \ <span class="comment">/* 返回未拷贝的字节数 */</span></div><div class="line">        <span class="string">"    jmp 2b\n"</span>            \</div><div class="line">        <span class="string">".previous\n"</span>             \</div><div class="line">        <span class="string">".section __ex_table,\"a\"\n"</span>\</div><div class="line">        <span class="string">"    .align 4\n"</span>          \</div><div class="line">        <span class="string">"    .long 0b,3b\n"</span>       \</div><div class="line">        <span class="string">"    .long 1b,4b\n"</span>       \</div><div class="line">        <span class="string">".previous"</span>               \</div><div class="line">        : <span class="string">"=&amp;c"</span>(size), <span class="string">"=&amp;D"</span> (__d0), <span class="string">"=&amp;S"</span> (__d1)        \</div><div class="line">        <span class="comment">/* 输出size=ecx */</span></div><div class="line">        : <span class="string">"r"</span>(size &amp; <span class="number">3</span>), <span class="string">"0"</span>(size / <span class="number">4</span>), <span class="string">"1"</span>(to), <span class="string">"2"</span>(from)    \</div><div class="line">        <span class="comment">/* 输入%3=单字节数目，ecx=四字节数目，edi=to, esi=from */</span></div><div class="line">        : <span class="string">"memory"</span>);                        \</div><div class="line">&#125; <span class="keyword">while</span> (<span class="number">0</span>)</div></pre></td></tr></table></figure>
+<h3 id="do-strncpy-from-user"><a href="#do-strncpy-from-user" class="headerlink" title="__do_strncpy_from_user"></a>__do_strncpy_from_user</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> __do_strncpy_from_user(dst,src,count,res) \</span></div><div class="line">do &#123;\</div><div class="line">    int __d0, __d1, __d2;            \</div><div class="line">    __asm__ __volatile__(            \</div><div class="line">        <span class="meta-string">"    testl %1,%1\n"</span>          \ <span class="comment">/* 待拷贝字符串长度是否为0 */</span></div><div class="line">        <span class="string">"    jz 2f\n"</span>                \ <span class="comment">/* 待拷贝字符串长度为0则直接退出 */</span></div><div class="line">        <span class="string">"0:  lodsb\n"</span>                \ <span class="comment">/* al  = *(esi++) */</span></div><div class="line">        <span class="string">"    stosb\n"</span>                \ <span class="comment">/* *(edi++) = al */</span></div><div class="line">        <span class="string">"    testb %%al,%%al\n"</span>      \ <span class="comment">/* if al == 0? */</span></div><div class="line">        <span class="string">"    jz 1f\n"</span>                \ <span class="comment">/* if al == 0： goto 1f */</span></div><div class="line">        <span class="string">"    decl %1\n"</span>              \ <span class="comment">/* ecx-- */</span></div><div class="line">        <span class="string">"    jnz 0b\n"</span>               \ <span class="comment">/* if ecx &gt; 0: goto 0b */</span></div><div class="line">        <span class="string">"1:  subl %1,%0\n"</span>           \ <span class="comment">/* edx -= ecx */</span></div><div class="line">        <span class="string">"2:\n"</span>                       \</div><div class="line">        <span class="string">".section .fixup,\"ax\"\n"</span>   \ <span class="comment">/* 如果拷贝的时候出现问题 */</span></div><div class="line">        <span class="string">"3:  movl %5,%0\n"</span>           \ <span class="comment">/* edx = -EFAULT */</span></div><div class="line">        <span class="string">"    jmp 2b\n"</span>               \ <span class="comment">/* 退出 */</span></div><div class="line">        <span class="string">".previous\n"</span>                \</div><div class="line">        <span class="string">".section __ex_table,\"a\"\n"</span>\</div><div class="line">        <span class="string">"    .align 4\n"</span>             \</div><div class="line">        <span class="string">"    .long 0b,3b\n"</span>          \</div><div class="line">        <span class="string">".previous"</span>                  \</div><div class="line">        : <span class="string">"=d"</span>(res), <span class="string">"=c"</span>(count), <span class="string">"=&amp;a"</span> (__d0), <span class="string">"=&amp;S"</span> (__d1),\</div><div class="line">          <span class="string">"=&amp;D"</span> (__d2)\</div><div class="line">          <span class="comment">/* 输出res=edx, count=ecx */</span></div><div class="line">        : <span class="string">"i"</span>(-EFAULT), <span class="string">"0"</span>(count), <span class="string">"1"</span>(count), <span class="string">"3"</span>(src), <span class="string">"4"</span>(dst) \</div><div class="line">          <span class="comment">/* 输入%5=-EFAULT, edx=count, edx=count, esi=src, edi=dst */</span></div><div class="line">        : <span class="string">"memory"</span>);\</div><div class="line">&#125; <span class="keyword">while</span> (<span class="number">0</span>)</div></pre></td></tr></table></figure>
+<h3 id="strchr"><a href="#strchr" class="headerlink" title="strchr"></a>strchr</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">char</span> * <span class="title">strchr</span><span class="params">(<span class="keyword">const</span> <span class="keyword">char</span> * s, <span class="keyword">int</span> c)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> d0;</div><div class="line">    <span class="keyword">register</span> <span class="keyword">char</span> * __res;</div><div class="line">    __asm__ __volatile__(</div><div class="line">        <span class="string">"movb %%al,%%ah\n"</span>        <span class="comment">//ah=目标字符</span></div><div class="line">        <span class="string">"1: lodsb\n\t"</span>            <span class="comment">//al=*(esi++)</span></div><div class="line">        <span class="string">"   cmpb %%ah, %%al\n\t"</span>  <span class="comment">//ah == al?</span></div><div class="line">        <span class="string">"   je 2f\n\t"</span>            <span class="comment">//if ah == al: goto 2f</span></div><div class="line">        <span class="string">"   testb %%al, %%al\n\t"</span> <span class="comment">//al == ‘0’？</span></div><div class="line">        <span class="string">"   jne 1b\n\t"</span>           <span class="comment">//if al != '0': goto 1f</span></div><div class="line">        <span class="string">"   movl $1,%1\n"</span>         <span class="comment">//eax=1, return 0</span></div><div class="line">        <span class="string">"2: movl %1,%0\n\t"</span>       <span class="comment">//eax=esi, return esi-1</span></div><div class="line">        <span class="string">"   decl %0"</span>              <span class="comment">//eax--</span></div><div class="line">        :<span class="string">"=a"</span> (__res), <span class="string">"=&amp;S"</span> (d0)</div><div class="line">        <span class="comment">//输出__res=eax</span></div><div class="line">        : <span class="string">"1"</span> (s),<span class="string">"0"</span> (c));</div><div class="line">        <span class="comment">//输入esi=s, eax=c</span></div><div class="line">    <span class="keyword">return</span> __res;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="get-user"><a href="#get-user" class="headerlink" title="get_user"></a>get_user</h3><figure class="highlight"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div></pre></td><td class="code"><pre><div class="line">/*------------ exec.c/count() ------------*/</div><div class="line"></div><div class="line">static int count(char ** argv, int max)</div><div class="line">&#123;</div><div class="line">    int i = 0;</div><div class="line"></div><div class="line">    if (argv != NULL) &#123;</div><div class="line">        for (;;) &#123;</div><div class="line">            char * p;</div><div class="line">            int error;</div><div class="line"></div><div class="line">            error = get_user(p,argv);</div><div class="line">            if (error) //出问题了</div><div class="line">                return error;</div><div class="line">            if (!p)    //到末尾了，最后一个是NULL</div><div class="line">                break;</div><div class="line">            argv++;</div><div class="line">            if(++i &gt; max)</div><div class="line">                return -E2BIG;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    return i;</div><div class="line">&#125;</div><div class="line"></div><div class="line">/*------------ uaccess.h/get_user() ------------*/</div><div class="line"></div><div class="line">#define __get_user_x(size,ret,x,ptr) \</div><div class="line">    __asm__ __volatile__("call __get_user_" #size \</div><div class="line">        :"=a" (ret),"=d" (x) \</div><div class="line">        //输出ret=eax, x=edx</div><div class="line">        :"0" (ptr))</div><div class="line">        //输入eax=ptr</div><div class="line"></div><div class="line">// 成功情况x=*ptr, return 0</div><div class="line">// 失败情况x=0, return -14</div><div class="line">#define get_user(x,ptr)                            \</div><div class="line">(&#123;    int __ret_gu,__val_gu;                        \</div><div class="line">    switch(sizeof (*(ptr))) &#123;                    \</div><div class="line">    case 1:  __get_user_x(1,__ret_gu,__val_gu,ptr); break;        \</div><div class="line">    case 2:  __get_user_x(2,__ret_gu,__val_gu,ptr); break;        \</div><div class="line">    case 4:  __get_user_x(4,__ret_gu,__val_gu,ptr); break;        \</div><div class="line">    default: __get_user_x(X,__ret_gu,__val_gu,ptr); break;        \</div><div class="line">    &#125;                                \</div><div class="line">    (x) = (__typeof__(*(ptr)))__val_gu;                \</div><div class="line">    __ret_gu;                            \</div><div class="line">&#125;)</div><div class="line"></div><div class="line">/*------------ getuser.S/__get_user_4 ------------*/</div><div class="line">.align 4</div><div class="line">.globl __get_user_4</div><div class="line">__get_user_4:            //从用户空间指针取四个字节, 即return *eax</div><div class="line">    addl $3,%eax         //eax+=3, 得到四字节内存区域末端</div><div class="line">    movl %esp,%edx       //edx=esp</div><div class="line">    jc bad_get_user      //如果eax+=3过程中有进位。防止eax==0xffffffff,</div><div class="line">                         //eax+=3之后溢出，反而变成了有效地址</div><div class="line">    andl $0xffffe000,%edx//将进程系统堆栈指针8KB对齐，即取task_struct</div><div class="line">    cmpl addr_limit(%edx),%eax //eax &gt;= task_struct.addr_list?</div><div class="line">    jae bad_get_user     //超过地址上限</div><div class="line">3:  movl -3(%eax),%edx   //edx=*(eax-3)</div><div class="line">    xorl %eax,%eax       //eax=0</div><div class="line">    ret</div><div class="line"></div><div class="line">bad_get_user:            //用户地址非法</div><div class="line">    xorl %edx,%edx       //edx=0</div><div class="line">    movl $-14,%eax       //eax=-14</div><div class="line">    ret</div><div class="line"></div><div class="line">.section __ex_table,"a"</div><div class="line">    .long 1b,bad_get_user</div><div class="line">    .long 2b,bad_get_user</div><div class="line">    .long 3b,bad_get_user</div></pre></td></tr></table></figure>
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/linux内核/">linux内核</a>, <a class="tags-link" href="/tags/汇编/">汇编</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 10px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/10/linux内核汇编小结/">linux内核x86汇编小结</a>
+      </li>
+    
+      <li>
+        <a href="/2015/08/26/如何调试系统库-libcurl/">如何调试系统库(libcurl)</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>
