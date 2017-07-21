@@ -1,0 +1,218 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>python中subprocess如何引用.bashrc? | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="在python中运行外部程序一般会用到subprocess模块。subprocess模块的Popen类可以方便的创建一个子进程。但是Popen并不会预先读入~/.bashrc中的环境变量，即使指定用bash运行外部程序。如果需要引用.bashrc中的一些环境变量，比如PATH，或者alias定义，怎样才能实现呢？">
+  
+  <meta name="description" content="在python中运行外部程序一般会用到subprocess模块。subprocess模块的Popen类可以方便的创建一个子进程。但是Popen并不会预先读入~/.bashrc中的环境变量，即使指定用bash运行外部程序。如果需要引用.bashrc中的一些环境变量，比如PATH，或者alias定义，怎样才能实现呢？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="python中subprocess如何引用.bashrc?">
+<meta property="og:url" content="http://yoursite.com/2017/03/27/python-source-bashrc/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="在python中运行外部程序一般会用到subprocess模块。subprocess模块的Popen类可以方便的创建一个子进程。但是Popen并不会预先读入~/.bashrc中的环境变量，即使指定用bash运行外部程序。如果需要引用.bashrc中的一些环境变量，比如PATH，或者alias定义，怎样才能实现呢？">
+<meta property="og:updated_time" content="2017-03-28T14:34:24.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="python中subprocess如何引用.bashrc?">
+<meta name="twitter:description" content="在python中运行外部程序一般会用到subprocess模块。subprocess模块的Popen类可以方便的创建一个子进程。但是Popen并不会预先读入~/.bashrc中的环境变量，即使指定用bash运行外部程序。如果需要引用.bashrc中的一些环境变量，比如PATH，或者alias定义，怎样才能实现呢？">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2017/03/27/python-source-bashrc/">
+  <time datetime="2017-03-27T11:00:32.000Z">
+    2017-03-27
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">python中subprocess如何引用.bashrc?</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>在python中运行外部程序一般会用到subprocess模块。subprocess模块的Popen类可以方便的创建一个子进程。但是Popen并不会预先读入~/.bashrc中的环境变量，即使指定用bash运行外部程序。如果需要引用.bashrc中的一些环境变量，比如PATH，或者alias定义，怎样才能实现呢？</p>
+<a id="more"></a>
+<p>我们先看一个例子。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> subprocess</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_cmd</span><span class="params">(cmdline)</span>:</span></div><div class="line">    cmdline = [<span class="string">"bash"</span>, <span class="string">"-c"</span>, cmdline]</div><div class="line">    <span class="keyword">print</span> <span class="string">"*** Running &#123;0&#125; ***"</span>.format(cmdline)</div><div class="line">    p = subprocess.Popen(cmdline,</div><div class="line">                         stdin=<span class="keyword">None</span>,</div><div class="line">                         stdout=subprocess.PIPE,</div><div class="line">                         stderr=subprocess.STDOUT)</div><div class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">        line = p.stdout.readline()</div><div class="line">        <span class="keyword">if</span> line != <span class="string">""</span>:</div><div class="line">            <span class="keyword">print</span> line,</div><div class="line">            <span class="keyword">continue</span></div><div class="line">        rc = p.poll()</div><div class="line">        <span class="keyword">if</span> rc <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">            <span class="keyword">break</span></div><div class="line"></div><div class="line">run_cmd(<span class="string">'grep ll ~/.bashrc'</span>)</div><div class="line">run_cmd(<span class="string">'ll ~/.bashrc'</span>)</div></pre></td></tr></table></figure>
+<p>上面这段代码通过Popen执行其他程序，并指定用bash运行。输出如下，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">*** Running [&apos;bash&apos;, &apos;-c&apos;, &apos;ll ~/.bashrc&apos;] ***</div><div class="line">bash: ll: command not found</div><div class="line">*** Running [&apos;bash&apos;, &apos;-c&apos;, &apos;grep ll ~/.bashrc&apos;] ***</div><div class="line">alias ll=&quot;ls -l&quot;</div></pre></td></tr></table></figure>
+<p>很明显，我们在.bashrc中有定义<em>alias ll</em>，Popen运行的时候却找不到ll。这是因为bash仅在<strong>-i</strong>模式下才会主动读入.bashrc。好的，我们略作修改，把cmdline定义成<em>cmdline = [“bash”, “-i”, “-c”, cmdline]</em>。然后再次运行，输出如下，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">*** Running [&apos;bash&apos;, &apos;-i&apos;, &apos;-c&apos;, &apos;ll ~/.bashrc&apos;] ***</div><div class="line">-rw-r--r--. 1 Qiang Qiang 373 Mar 21 19:05 /home/Qiang/.bashrc</div><div class="line">*** Running [&apos;bash&apos;, &apos;-i&apos;, &apos;-c&apos;, &apos;grep ll ~/.bashrc&apos;] ***</div><div class="line"></div><div class="line">[1]+  Stopped                 python run_cmd.py</div></pre></td></tr></table></figure>
+<p>这次终于能够正确地执行ll这个alias。但是下面一行怎么回事，run_cmd.py怎么被stop了放到后台？如果需要继续运行，必须通过fg命令。这显然不是我们希望看到的。</p>
+<p>这背后究竟发生了什么事情？是什么导致了run_cmd.py被stop？为了解答这个问题，我们得依赖strace。调用strace的参数如下，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">strace -tt -ff -o result python run_cmd.py</div></pre></td></tr></table></figure>
+<p>其中参数 <em>-ff</em> 加上 <em>-o</em> 把跟踪过程中每个进程/线程的系统调用存到文件中。strace运行后我们通过下面的命令确定其中涉及的进程号。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">$ ps a -o &quot;pid ppid pgid sid command&quot; | grep run_cmd</div><div class="line">31357 30386 31357 30386 strace -tt -ff -o result python run_cmd.py</div><div class="line">31362 31357 31357 30386 python run_cmd.py</div><div class="line">31431 31381 31430 31381 grep run_cmd</div><div class="line">$ ps a -o &quot;pid ppid pgid sid command&quot; | grep 30386</div><div class="line">30386 30385 30386 30386 -bash</div><div class="line">31357 30386 31357 30386 strace -tt -ff -o result python run_cmd.py</div><div class="line">31362 31357 31357 30386 python run_cmd.py</div><div class="line">31376 31362 31357 30386 bash -i -c grep ll ~/.bashrc</div><div class="line">31442 31381 31441 31381 grep 30386</div></pre></td></tr></table></figure>
+<p>这里面pid是进程号，ppid是父进程号，pgid是进程组(process group)id，sid是session的id。当你通过ssh登录到一台机器，从bash shell到所有后续运行的程序都会归属一个session，session的id就是bash shell的pid，bash shell这时也是session的leader process。进程组则是下一层组织架构，一个session内部有若干进程组，而一个进程组内部有若干进程。进程组内也有一个leader process，进程组的id就是leader process的pid。因此30386是我们做实验session的id。我们通过搜索这个id可以把实验中处于stop状态的进程都找出来。</p>
+<p>首先查看文件result.31362，里面有run_cmd.py对应进程的系统调用细节。其中clone系统调用创建子进程，并且出现过两次，对应的是run_cmd.py两次调用bash跑命令。第二次clone之后就出现了异常，进程被信号SIGTTIN stop了，如下所示。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">20:27:46.113939 read(3, 0x2307063, 1)   = ? ERESTARTSYS (To be restarted if SA_RESTART is set)</div><div class="line">20:27:46.117938 --- SIGTTIN &#123;si_signo=SIGTTIN, si_code=SI_USER, si_pid=31376, si_uid=501&#125; ---</div><div class="line">20:27:46.117952 --- stopped by SIGTTIN ---</div></pre></td></tr></table></figure>
+<p>我们不急着分析其中的原因，接着检查文件result.31376。这个是第二个bash命令对应进程的系统调用输出。其中也有类似的段落，进程被信号SIGTTIN stop了。而且在被stop之前，使用kill向整个进程组广播信号SIGTTIN。这就是为什么父进程31362为什么会收到SIGTTIN。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">20:27:46.117873 ioctl(255, TIOCGPGRP, [31363]) = 0</div><div class="line">20:27:46.117889 rt_sigaction(SIGTTIN, &#123;SIG_DFL, [], SA_RESTORER, 0x33b9432660&#125;, &#123;SIG_IGN, [], SA_RESTORER, 0x33b9432660&#125;, 8) = 0</div><div class="line">20:27:46.117907 kill(0, SIGTTIN)        = 0</div><div class="line">20:27:46.117931 --- SIGTTIN &#123;si_signo=SIGTTIN, si_code=SI_USER, si_pid=31376, si_uid=501&#125; ---</div><div class="line">20:27:46.117947 --- stopped by SIGTTIN ---</div></pre></td></tr></table></figure>
+<p>那么子进程为什么会收到信号SIGTTIN呢？根据 <em>The Linux Programming Interface</em> 一书中的解释，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">SIGTTIN</div><div class="line">When running under a job-control shell, the terminal driver sends</div><div class="line">this signal to a background process group when it attempts to </div><div class="line">read() from the terminal. This signal stops a process by default.</div></pre></td></tr></table></figure>
+<p>子进程31376作为一个后台进程，尝试着去操作终端，因此被通知到信号SIGTTIN。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">20:27:46.117795 open(&quot;/dev/tty&quot;, O_RDWR|O_NONBLOCK) = 3</div><div class="line">20:27:46.117815 getrlimit(RLIMIT_NOFILE, &#123;rlim_cur=1024, rlim_max=4*1024&#125;) = 0</div><div class="line">20:27:46.117830 fcntl(255, F_GETFD)     = -1 EBADF (Bad file descriptor)</div><div class="line">20:27:46.117844 dup2(3, 255)            = 255</div><div class="line">20:27:46.117859 close(3)                = 0</div><div class="line">20:27:46.117873 ioctl(255, TIOCGPGRP, [31363]) = 0</div><div class="line">20:27:46.117889 rt_sigaction(SIGTTIN, &#123;SIG_DFL, [], SA_RESTORER, 0x33b9432660&#125;, &#123;SIG_IGN, [], SA_RESTORER, 0x33b9432660&#125;, 8) = 0</div><div class="line">20:27:46.117907 kill(0, SIGTTIN)        = 0</div><div class="line">20:27:46.117931 --- SIGTTIN &#123;si_signo=SIGTTIN, si_code=SI_USER, si_pid=31376, si_uid=501&#125; ---</div><div class="line">20:27:46.117947 --- stopped by SIGTTIN ---</div></pre></td></tr></table></figure>
+<p>那如何修改呢？我们可以调用<strong>os.tcsetpgrp()</strong>把终端控制权拿回来，但是要注意，后台进程直接去拿终端会收到SIGTTOU。这个信号同样会导致进程stop。因此我们还需要改变SIGTTOU的handler，让进程忽略这个信号。</p>
+<p>修改完的代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line"><span class="keyword">import</span> signal</div><div class="line"><span class="keyword">import</span> subprocess</div><div class="line"></div><div class="line">signal.signal(signal.SIGTTOU, signal.SIG_IGN)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">run_cmd</span><span class="params">(cmdline)</span>:</span></div><div class="line">    cmdline = [<span class="string">"bash"</span>, <span class="string">"-i"</span>, <span class="string">"-c"</span>, cmdline]</div><div class="line">    <span class="keyword">print</span> <span class="string">"*** Running &#123;0&#125; ***"</span>.format(cmdline)</div><div class="line">    p = subprocess.Popen(cmdline,</div><div class="line">                         stdin=<span class="keyword">None</span>,</div><div class="line">                         stdout=subprocess.PIPE,</div><div class="line">                         stderr=subprocess.STDOUT)</div><div class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">        line = p.stdout.readline()</div><div class="line">        <span class="keyword">if</span> line != <span class="string">""</span>:</div><div class="line">            <span class="keyword">print</span> line,</div><div class="line">            <span class="keyword">continue</span></div><div class="line">        rc = p.poll()</div><div class="line">        <span class="keyword">if</span> rc <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">None</span>:</div><div class="line">            <span class="keyword">break</span></div><div class="line">    fd = os.open(<span class="string">"/dev/tty"</span>, os.O_RDWR)</div><div class="line">    os.tcsetpgrp(fd, os.getpgrp())</div><div class="line"></div><div class="line">run_cmd(<span class="string">'ll ~/.bashrc'</span>)</div><div class="line">run_cmd(<span class="string">'grep ll ~/.bashrc'</span>)</div></pre></td></tr></table></figure>
+<p>改完之后就一切正常了。上文的解决方案部分参考stackoverflow<a href="http://stackoverflow.com/questions/25099895/from-python-start-a-shell-that-can-interpret-functions-and-aliases" target="_blank" rel="external">这篇文章</a>。进程组和session的知识可以参考<em>The Linux Programming Interface</em> 第34章。</p>
+
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/linux/">linux</a>, <a class="tags-link" href="/tags/process-group/">process group</a>, <a class="tags-link" href="/tags/python/">python</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 15px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/process-group/" style="font-size: 10px;">process group</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/07/21/ArrayExceedBoundary/">一个数组越界的问题</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/27/python-source-bashrc/">python中subprocess如何引用.bashrc?</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+      <li>
+        <a href="/2015/09/27/Linux内核疑点若干/">Linux内核疑点若干</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>
