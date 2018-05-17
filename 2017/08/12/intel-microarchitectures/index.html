@@ -1,0 +1,305 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  
+  <title>Intel CPU的微架构 | Qiang&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  
+    <meta name="author" content="Qiang Zhou">
+  
+  
+    <meta name="description" content="一张表格让你了解Intel的CPU微架构历史。">
+  
+  <meta name="description" content="一张表格让你了解Intel的CPU微架构历史。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Intel CPU的微架构">
+<meta property="og:url" content="http://yoursite.com/2017/08/12/intel-microarchitectures/index.html">
+<meta property="og:site_name" content="Qiang's Blog">
+<meta property="og:description" content="一张表格让你了解Intel的CPU微架构历史。">
+<meta property="og:updated_time" content="2017-08-12T15:27:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Intel CPU的微架构">
+<meta name="twitter:description" content="一张表格让你了解Intel的CPU微架构历史。">
+  
+    <link rel="alternate" href="/atom.xml" title="Qiang&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  <!--[if lt IE 9]><script src="//cdn.bootcss.com/html5shiv/3.7.0/html5shiv.min.js"></script><![endif]-->
+  
+  
+</head>
+<body>
+  <div class="wrapper">
+    <header id="header">
+  <div class="title">
+    <h1><a href="/">Qiang&#39;s Blog</a></h1>
+    <p><a href="/">The best or nothing</a></p>
+  </div>
+  <nav class="nav">
+    <ul>
+      
+        <li><a href="/">Home</a></li>
+      
+        <li><a href="/archives">Archives</a></li>
+      
+      
+        <li><a href="/atom.xml">RSS</a></li>
+      
+    </ul>
+    <div class="clearfix"></div>
+  </nav>
+  <div class="clearfix"></div>
+</header>
+    <div class="content"><article class="post">
+  <header>
+    
+      <div class="icon"></div>
+      <a href="/2017/08/12/intel-microarchitectures/">
+  <time datetime="2017-08-12T14:17:07.000Z">
+    2017-08-12
+  </time>
+</a>
+    
+    
+  
+    <h1 class="title">Intel CPU的微架构</h1>
+  
+
+  </header>
+  
+  <div class="entry">
+    
+      <p>一张表格让你了解Intel的CPU微架构历史。</p>
+<a id="more"></a>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Codename</th>
+<th style="text-align:center">Year</th>
+<th style="text-align:center">Transistors</th>
+<th style="text-align:left">Example Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Icelake" target="_blank" rel="external">Icelake</a></td>
+<td style="text-align:center">2018???</td>
+<td style="text-align:center">10nm</td>
+<td style="text-align:left">???</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Cannonlake" target="_blank" rel="external">Cannonlake</a></td>
+<td style="text-align:center">2017???</td>
+<td style="text-align:center">10nm</td>
+<td style="text-align:left">???</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Coffee_Lake" target="_blank" rel="external">Coffee Lake</a></td>
+<td style="text-align:center">2017</td>
+<td style="text-align:center">14nm</td>
+<td style="text-align:left">i3-8100/i5-8400/i7-8700</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Kaby_Lake" target="_blank" rel="external">Kaby Lake</a></td>
+<td style="text-align:center">2016</td>
+<td style="text-align:center">14nm</td>
+<td style="text-align:left">i3-7101/i5-7400/i7-7700</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Skylake_%28microarchitecture%29" target="_blank" rel="external">Skylake</a></td>
+<td style="text-align:center">2015</td>
+<td style="text-align:center">14nm</td>
+<td style="text-align:left">i3-6100/i5-6400/i7-6700</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Broadwell_%28microarchitecture%29" target="_blank" rel="external">Broadwell</a></td>
+<td style="text-align:center">2014</td>
+<td style="text-align:center">14nm</td>
+<td style="text-align:left">i3-5005/i5-5200/i7-5500</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Haswell_%28microarchitecture%29" target="_blank" rel="external">Haswell</a></td>
+<td style="text-align:center">2013</td>
+<td style="text-align:center">22nm</td>
+<td style="text-align:left">i3-4130/i5-4670/i7-4770</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Ivy_Bridge_%28microarchitecture%29" target="_blank" rel="external">Ivy Bridge</a></td>
+<td style="text-align:center">2012</td>
+<td style="text-align:center">22nm</td>
+<td style="text-align:left">i3-3210/i5-3330/i7-3770</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Sandy_Bridge" target="_blank" rel="external">Sandy Bridge</a></td>
+<td style="text-align:center">2011</td>
+<td style="text-align:center">32nm</td>
+<td style="text-align:left">i3-2100/i5-2300/i7-2600</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Westmere_%28microarchitecture%29" target="_blank" rel="external">Westmere</a></td>
+<td style="text-align:center">2010</td>
+<td style="text-align:center">32nm</td>
+<td style="text-align:left">i3-530/i5-650/i7-970</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Nehalem_%28microarchitecture%29" target="_blank" rel="external">Nehalem</a></td>
+<td style="text-align:center">2008</td>
+<td style="text-align:center">45nm</td>
+<td style="text-align:left">i5-750/i7-860</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Intel_Core_%28microarchitecture%29" target="_blank" rel="external">Core</a></td>
+<td style="text-align:center">2006</td>
+<td style="text-align:center">65nm-45nm</td>
+<td style="text-align:left">Core 2 Duo/Core 2 Quad</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/NetBurst_%28microarchitecture%29" target="_blank" rel="external">NetBurst</a></td>
+<td style="text-align:center">2000</td>
+<td style="text-align:center">180nm-65nm</td>
+<td style="text-align:left">Pentium 4</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/Pentium_M" target="_blank" rel="external">Pentium M</a></td>
+<td style="text-align:center">2003</td>
+<td style="text-align:center">90nm</td>
+<td style="text-align:left">Pentium M/Core Duo/Core Solo</td>
+</tr>
+<tr>
+<td style="text-align:left"><a href="https://en.wikipedia.org/wiki/P6_%28microarchitecture%29" target="_blank" rel="external">P6</a></td>
+<td style="text-align:center">1995</td>
+<td style="text-align:center">350nm-130nm</td>
+<td style="text-align:left">Pentium Pro/Pentium II/Pentium III</td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul>
+<li><p>Pentium M其实是P6的移动平台版本。</p>
+</li>
+<li><p>首款支持x86_64指令集的CPU由AMD在2000年左右推出。而Intel在2004年才有类似产品（Xeon，CPU代号Nocona， 使用NetBurst微架构），在移动平台则于2006年支持（代号Merom，Core 2）。</p>
+</li>
+<li><p>流水线长度并不是越长越好。NetBurst有20级pipeline，后期甚至提高到31级。主频虽然提上去了（2004年的<a href="http://ark.intel.com/products/codename/1791/Prescott" target="_blank" rel="external">Prescott</a>主频可以达到4.0G，相比较而言，2015年Skylake架构下的高端型号<a href="http://ark.intel.com/products/88195/" target="_blank" rel="external">i7-6700K</a>也不过4.0G主频），但是指令延迟也增加了，整体而言CPU的性能却下降了。因此后面的Core微架构直接把pipeline降到了12级。</p>
+</li>
+</ul>
+
+    
+  </div>
+  <footer>
+    
+      
+      
+  <div class="tags">
+    <a class="tags-link" href="/tags/CPU/">CPU</a>
+  </div>
+
+      
+    
+    <div class="clearfix"></div>
+  </footer>
+</article>
+
+</div>
+  </div>
+  
+  <div id="sidebar" class="widgets-bottom">
+  
+
+  
+<div class="widget tagcloud">
+  <h3 class="title">tagcloud</h3>
+  <div class="entry">
+    <a href="/tags/CPU/" style="font-size: 10px;">CPU</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/Linux内核/" style="font-size: 10px;">Linux内核</a> <a href="/tags/c语言/" style="font-size: 15px;">c语言</a> <a href="/tags/gdb/" style="font-size: 10px;">gdb</a> <a href="/tags/link/" style="font-size: 10px;">link</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/linux内核/" style="font-size: 10px;">linux内核</a> <a href="/tags/process-group/" style="font-size: 10px;">process group</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/汇编/" style="font-size: 20px;">汇编</a>
+  </div>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">recent_posts</h3>
+  <ul class="entry">
+    
+      <li>
+        <a href="/2017/08/12/intel-microarchitectures/">Intel CPU的微架构</a>
+      </li>
+    
+      <li>
+        <a href="/2017/07/21/ArrayExceedBoundary/">一个数组越界的问题</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/27/python-source-bashrc/">python中subprocess如何引用.bashrc?</a>
+      </li>
+    
+      <li>
+        <a href="/2017/03/03/telnet-latency/">为何telnet到127.0.0.1会有5秒延迟？</a>
+      </li>
+    
+      <li>
+        <a href="/2016/08/24/linux库的链接问题/">linux库的链接问题</a>
+      </li>
+    
+  </ul>
+</div>
+
+</div>
+  
+  <footer id="footer"><div class="copyright">
+  
+  &copy; 2017 <a href="/">Qiang Zhou</a>
+  
+</div>
+<div class="theme-copyright">
+  Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a>
+   | 
+  Redesign by <a href="http://blog.dafengning.com/" target="_blank">Chong Zi</a>
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//lib.sinaapp.com/js/jquery/1.8/jquery.min.js"></script>
+<script src="/js/scale.fix.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+
+<div id="rightfix" style="display:none;">
+
+
+<a href="javascript:void(0)" id="gotop" class="fix_btn" onclick="gotop();" title="回到顶部"><i></i></a>
+<script>
+  function gotop(){
+    $('html,body').animate({
+        scrollTop : '0px'
+      }, 800);
+  }
+  $(function(){
+    _rightfix = $('#rightfix');
+    $(window).scroll(function(){
+      $sollTop = document.documentElement.scrollTop + document.body.scrollTop;
+      if($sollTop > 350){
+        _rightfix.show();
+      }else{
+        _rightfix.hide();
+      }
+    });
+  });
+</script>
+
+</div>
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+  (function($){
+    $('.fancybox').fancybox();
+  })(jQuery);
+</script>
+
+</body>
+</html>
